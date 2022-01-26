@@ -4,6 +4,7 @@ PN = anything-sync-daemon
 PREFIX ?= /usr
 CONFDIR = /etc
 CRONDIR = /etc/cron.hourly
+ALPINE_CRONDIR = /etc/periodoc/hourly
 INITDIR_SYSTEMD = /usr/lib/systemd/system
 INITDIR_UPSTART = /etc/init.d
 BINDIR = $(PREFIX)/bin
@@ -55,6 +56,10 @@ endif
 
 install-cron:
 	$(Q)echo -e '\033[1;32mInstalling cronjob...\033[0m'
+	UNAME := $(shell uname -v)
+ifneq ($(findstring "Alpine", $(UNAME)),)
+	CRONDIR :=$(ALPINE_CRONDIR)
+endif
 	$(INSTALL_DIR) "$(DESTDIR)$(CRONDIR)"
 	$(INSTALL_SCRIPT) common/asd.cron.hourly "$(DESTDIR)$(CRONDIR)/asd-update"
 
@@ -71,6 +76,12 @@ install-upstart:
 	$(INSTALL_DIR) "$(DESTDIR)$(CONFDIR)"
 	$(INSTALL_DIR) "$(DESTDIR)$(INITDIR_UPSTART)"
 	$(INSTALL_SCRIPT) init/asd.upstart "$(DESTDIR)$(INITDIR_UPSTART)/asd"
+
+install-openrc:
+	$(Q)echo -e '\033[1;32mInstalling OpenRC files...\033[0m'
+	$(INSTALL_DIR) "$(DESTDIR)$(CONFDIR)"
+	$(INSTALL_DIR) "$(DESTDIR)$(INITDIR_UPSTART)"
+	$(INSTALL_SCRIPT) init/asd.openrc "$(DESTDIR)$(INITDIR_UPSTART)/asd"
 
 install-systemd-all: install-bin install-man install-systemd
 
@@ -108,6 +119,10 @@ uninstall-upstart:
 	$(RM) "$(DESTDIR)$(CONFDIR)/asd.conf"
 	$(RM) "$(DESTDIR)$(INITDIR_UPSTART)/asd"
 
+uninstall-openrc:
+	$(RM) "$(DESTDIR)$(CONFDIR)/asd.conf"
+	$(RM) "$(DESTDIR)$(INITDIR_UPSTART)/asd"
+
 uninstall-systemd-all: uninstall-bin uninstall-man uninstall-systemd
 
 uninstall-upstart-all: uninstall-bin uninstall-man uninstall-cron uninstall-upstart
@@ -122,4 +137,4 @@ uninstall:
 clean:
 	$(RM) -f common/$(PN)
 
-.PHONY: help install-bin install-man install-cron install-systemd install-upstart install-systemd-all install-upstart-all install uninstall-bin uninstall-man uninstall-cron uninstall-systemd uninstall-upstart uninstall-systemd-all uninstall clean
+.PHONY: help install-bin install-man install-cron install-systemd install-upstart install-openrc install-systemd-all install-upstart-all install uninstall-bin uninstall-man uninstall-cron uninstall-systemd uninstall-upstart uninstall-openrc uninstall-systemd-all uninstall clean
