@@ -4,7 +4,7 @@ PN = anything-sync-daemon
 PREFIX ?= /usr
 CONFDIR = /etc
 CRONDIR = /etc/cron.hourly
-ALPINE_CRONDIR = /etc/periodoc/hourly
+ALPINE_CRONDIR = /etc/periodic/hourly
 INITDIR_SYSTEMD = /usr/lib/systemd/system
 INITDIR_UPSTART = /etc/init.d
 BINDIR = $(PREFIX)/bin
@@ -25,6 +25,8 @@ INSTALL_DATA = $(INSTALL) -m644
 INSTALL_DIR = $(INSTALL) -d
 
 Q = @
+
+UNAME := $(shell uname -v)
 
 common/$(PN): common/$(PN).in
 	$(Q)echo -e '\033[1;32mSetting version\033[0m'
@@ -56,12 +58,13 @@ endif
 
 install-cron:
 	$(Q)echo -e '\033[1;32mInstalling cronjob...\033[0m'
-	UNAME := $(shell uname -v)
-ifneq ($(findstring "Alpine", $(UNAME)),)
-	CRONDIR :=$(ALPINE_CRONDIR)
-endif
+ifneq ($(filter %Alpine, $(UNAME)),)
+	$(INSTALL_DIR) "$(DESTDIR)$(ALPINE_CRONDIR)"
+	$(INSTALL_SCRIPT) common/asd.cron.hourly "$(DESTDIR)$(ALPINE_CRONDIR)/asd-update"
+else
 	$(INSTALL_DIR) "$(DESTDIR)$(CRONDIR)"
 	$(INSTALL_SCRIPT) common/asd.cron.hourly "$(DESTDIR)$(CRONDIR)/asd-update"
+endif
 
 install-systemd:
 	$(Q)echo -e '\033[1;32mInstalling systemd files...\033[0m'
@@ -107,7 +110,11 @@ uninstall-man:
 	$(RM) -f "$(DESTDIR)$(MANDIR)/asd.1"
 
 uninstall-cron:
+ifneq ($(filter %Alpine, $(UNAME)),)
+	$(RM) "$(DESTDIR)$(ALPINE_CRONDIR)/asd-update"
+else
 	$(RM) "$(DESTDIR)$(CRONDIR)/asd-update"
+endif
 
 uninstall-systemd:
 	$(RM) "$(DESTDIR)$(CONFDIR)/asd.conf"
