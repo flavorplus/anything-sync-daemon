@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+
+description="Anything-sync-daemon (asd) is a tiny pseudo-daemon designed to manage user specified directories in tmpfs and to periodically sync them back to the physical disc (HDD/SSD)."
+
+depend() {
+	after localmount
+}
+
+start() {
+	ebegin "Starting anything-sync-daemon"
+	/usr/bin/anything-sync-daemon sync
+	eend $?
+}
+
+stop() {
+	ebegin "Stopping anything-sync-daemon"
+	/usr/bin/anything-sync-daemon unsync
+	eend $?
+}
